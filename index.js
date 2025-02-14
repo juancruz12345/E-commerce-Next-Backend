@@ -142,23 +142,19 @@ app.post('/login', async (req, res) => {
     }
 });
 
-app.post('/register', async(req,res)=>{
-  console.log(req.body)
-  const {username, password,email} = req.body
-  
-   try{
-    const id = await UserRepository.create({username,password,email})
-    console.log(id)
-    res.send({id})
-   }
-   catch(e){
-     res.status(400).send(e.message)
-   }
- 
-  /*
-  username,password,email*/
+app.post('/register', async (req, res) => {
+  const { username, password, email } = req.body;
 
-})
+  try {
+      const result = await UserRepository.create({ username, password, email });
+      console.log(result)
+    res.send({result})
+      // No necesitas enviar una respuesta aquí, ya que `create` ya lo hace
+  } catch (e) {
+      // Si hay un error inesperado, devuelve un JSON
+      res.status(500).json({ error: "Error interno del servidor: " + e.message });
+  }
+});
 
 
 
@@ -206,6 +202,37 @@ app.post('/register', async(req,res)=>{
       res.status(403).send('Error whit order: ', e)
     }
   })
+
+
+
+
+
+
+  
+  // Ruta para verificar el usuario
+  app.get("/verify/:email", async (req, res) => {
+      const { email } = req.params;
+  
+      try {
+          await db.execute("UPDATE users SET verificado = 1 WHERE email = ?", [email]);
+          res.json({ success: true, message: "Usuario verificado correctamente" });
+      } catch (error) {
+          console.error("Error al verificar el usuario:", error);
+          res.status(500).json({ success: false, error: "Error en el servidor" });
+      }
+  });
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

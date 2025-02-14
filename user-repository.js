@@ -18,33 +18,41 @@ const db = createClient({
 
 export class UserRepository{
 
-    static async create({username,password,email}){
+  static async create({username,password,email}){
 
-        Validation.username(username)
-        Validation.password(password)
+    Validation.username(username)
+    Validation.password(password)
 
+    const hashedPassword = await bcryptjs.hash(password,10)
+    const id = crypto.randomUUID()
     
+
+    const userExist = await db.execute({
+      sql:'SELECT * FROM users WHERE username = :username',
+      args: {username}
+   })
+   if(userExist.rows.length>0){
+    console.log(userExist)
+    throw new Error('Ya existe una cuenta con ese nombre de usuario registrado')
+   }
+
+    try{
+        const user = await db.execute({
+          sql: 'INSERT INTO users (username, password, email) VALUES (:username, :hashedPassword, :email)',
+          args: {username, hashedPassword, email}
+        })
+        console.log(user)
+        return user.lastInsertRowid.toString()
        
-
-        const hashedPassword = await bcryptjs.hash(password,10)
-        const id = crypto.randomUUID()
-        console.log(hashedPassword)
-        try{
-            const user = await db.execute({
-              sql: 'INSERT INTO users (username, password, email) VALUES (:username, :hashedPassword, :email)',
-              args: {username, hashedPassword, email}
-            })
-            console.log(user)
-            return user.lastInsertRowid.toString()
-           
+  
+      }catch(error){
+        console.log(error)
+        return
+      }
       
-          }catch(error){
-            console.log(error)
-            return
-          }
-          
 
-    }
+}
+
 
     static async login({username,password}){
 
@@ -56,10 +64,13 @@ export class UserRepository{
         sql:'SELECT * FROM users WHERE username = :username',
         args: {username}
      })
-  
+     console.log(user)
       if(!user) throw new Error('el nombre de usuario no esta registrado')
       const isValid = await bcryptjs.compare(password, user.rows[0].password)
       if(!isValid) throw new Error('el password no es valido')
+      if(!user.verificado){
+        throw new Error('Tu email no esta verificado- Revisa tu casilla de mensajes para verificar tu cuenta')
+      }
 
       const {password: _, ...publicUser} = user.rows[0]
       return publicUser

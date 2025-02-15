@@ -26,7 +26,7 @@ const ACCEPTED_ORIGINS = [
 ]
 
 app.use(cors({credentials: true ,
-  origin: ACCEPTED_ORIGINS
+  origin: true
   
 }));
 
@@ -138,7 +138,7 @@ app.post('/login', async (req, res) => {
         res.send({ user, accesToken, refreshToken });
 
     } catch (e) {
-        res.status(401).send(e.message);
+      res.status(500).json({ error: "Error interno del servidor: " + e.message });
     }
 });
 
@@ -184,22 +184,40 @@ app.post('/register', async (req, res) => {
   })
 
 
+  app.get('/user/:id', async (req, res) => {
+    const { id } = req.params;  
+    
 
-  app.get('orders/:id', async(req,res)=>{
+    try {
+        const user = await db.execute({
+            sql: 'SELECT * FROM users WHERE id = ?',
+            args: [id]  
+        })
 
-    const {user_id} = req.params
+        res.json({ success: true, user: user.rows });
+
+    } catch (e) {
+        console.error("Error en la consulta:", e);
+        res.status(500).json({ success: false, error: "Error en el servidor" });
+    }
+});
+
+
+  app.get('/orders/:id', async(req,res)=>{
+
+    const { id } = req.params;  
 
     try{
 
       const orders = await db.execute({
-        sql:'SELECT * FROM orders WHERE user_id = :user_id',
-        args:[user_id]
-      })
+        sql: 'SELECT * FROM orders WHERE user_id = ?',
+        args: [id]  
+    })
 
-      res.send(orders)
+    res.json({ success: true, orders: orders.rows });
 
     }catch(e){
-      res.status(403).send('Error whit order: ', e)
+      res.status(500).json({ success: false, error: "Error en el servidor" });
     }
   })
 

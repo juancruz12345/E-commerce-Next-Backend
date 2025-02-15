@@ -32,7 +32,7 @@ export class UserRepository{
       args: {username}
    })
    if(userExist.rows.length>0){
-    console.log(userExist)
+    
     throw new Error('Ya existe una cuenta con ese nombre de usuario registrado')
    }
 
@@ -58,25 +58,27 @@ export class UserRepository{
 
       Validation.username(username)
       Validation.password(password)
-
+   
     try{
       const user = await db.execute({
         sql:'SELECT * FROM users WHERE username = :username',
         args: {username}
      })
-     console.log(user)
-      if(!user) throw new Error('el nombre de usuario no esta registrado')
+     
+      if(user.rows.length===0) throw new Error('el nombre de usuario no esta registrado')
       const isValid = await bcryptjs.compare(password, user.rows[0].password)
       if(!isValid) throw new Error('el password no es valido')
-      if(!user.verificado){
-        throw new Error('Tu email no esta verificado- Revisa tu casilla de mensajes para verificar tu cuenta')
+        
+      if(user.rows[0].verificado!==1){
+        throw new Error('El usuario no esta verificado')
       }
 
       const {password: _, ...publicUser} = user.rows[0]
       return publicUser
     }
-    catch(e){
-      throw new Error(e)
+    catch(error){
+      console.log(error)
+        return
     }
 
     } 

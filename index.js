@@ -138,7 +138,7 @@ app.post('/login', async (req, res) => {
         res.send({ user, accesToken, refreshToken });
 
     } catch (e) {
-      res.status(500).json({ error: "Error interno del servidor: " + e.message });
+      res.status(400).json({ error: e.message }); 
     }
 });
 
@@ -151,8 +151,7 @@ app.post('/register', async (req, res) => {
     res.send({result})
       // No necesitas enviar una respuesta aquí, ya que `create` ya lo hace
   } catch (e) {
-      // Si hay un error inesperado, devuelve un JSON
-      res.status(500).json({ error: "Error interno del servidor: " + e.message });
+    res.status(400).json({ error: e.message }); 
   }
 });
 
@@ -221,6 +220,27 @@ app.post('/register', async (req, res) => {
     }
   })
 
+  app.get('/order/:orderId', async(req,res)=>{
+
+    const { orderId } = req.params;  
+
+    try{
+
+      const orders = await db.execute({
+        sql: 'SELECT * FROM order_items WHERE order_id = ?',
+        args: [orderId]  
+    })
+
+    res.json({ success: true, orders: orders.rows });
+
+    }catch(e){
+      res.status(500).json({ success: false, error: "Error en el servidor" });
+    }
+  })
+
+
+  
+
 
 
 
@@ -242,12 +262,61 @@ app.post('/register', async (req, res) => {
 
 
 
+  ////////////////////--------UPDATE-----------///////////////////
+  app.put('/user/:id', async (req, res) => {
+    const {id} = req?.params
+    const {email, adress } = req?.body
+    console.log(req.body)
+    const fieldsToUpdate = []
+    const values = []
+  
+    if (email) {
+      fieldsToUpdate.push('email = ?')
+      values.push(email)
+    }
+    if (adress) {
+      fieldsToUpdate.push('adress = ?')
+      values.push(adress)
+    }
+   
+    
+    const query = `UPDATE users SET ${fieldsToUpdate.join(', ')} WHERE id = ?`
+    values.push(id)
+   
+    try {
+      await db.execute(query, values)
+      res.status(200).json({ message: 'Usuario actualizado correctamente.' })
+    } catch (error) {
+      console.error('Error al actualizar el Evento:', error)
+      res.status(500).json({ message: 'Error interno del servidor.' })
+    }
+   
+  })
 
 
 
 
 
 
+  app.delete('/user/:id', async(req, res)=>{
+
+    const {id} = req.params
+    console.log(req.params)
+
+    if(!id){
+      throw new Error('El id del usuario es requerido')
+    }
+
+    try{
+
+      await db.execute("DELETE FROM users WHERE id = ?", [id]);
+      res.json({ success: true, message: "Usuario eliminado correctamente" });
+
+    }catch(error){
+      console.error('Error al eliminar el usuario:', error)
+      res.status(500).json({ message: 'Error interno del servidor.' })
+    }
+  })
 
 
 

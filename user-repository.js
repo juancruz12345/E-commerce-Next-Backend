@@ -33,23 +33,20 @@ export class UserRepository{
    })
    if(userExist.rows.length>0){
     
-    throw new Error('Ya existe una cuenta con ese nombre de usuario registrado')
+    throw new Error('An account with that username already exists.')
    }
-
-    try{
+   if(password.length<6){
+    
+    throw new Error('The password must contain at least 6 characters')
+   }
+   
         const user = await db.execute({
           sql: 'INSERT INTO users (username, password, email) VALUES (:username, :hashedPassword, :email)',
           args: {username, hashedPassword, email}
         })
-        console.log(user)
+        
         return user.lastInsertRowid.toString()
        
-  
-      }catch(error){
-        console.log(error)
-        return
-      }
-      
 
 }
 
@@ -59,27 +56,23 @@ export class UserRepository{
       Validation.username(username)
       Validation.password(password)
    
-    try{
+ 
       const user = await db.execute({
         sql:'SELECT * FROM users WHERE username = :username',
         args: {username}
      })
      
-      if(user.rows.length===0) throw new Error('el nombre de usuario no esta registrado')
+      if(user.rows.length===0) throw new Error('The username is not registered')
       const isValid = await bcryptjs.compare(password, user.rows[0].password)
-      if(!isValid) throw new Error('el password no es valido')
+      if(!isValid) throw new Error('The password is not valid')
         
       if(user.rows[0].verificado!==1){
-        throw new Error('El usuario no esta verificado')
+        throw new Error('The user is not verified')
       }
 
       const {password: _, ...publicUser} = user.rows[0]
       return publicUser
-    }
-    catch(error){
-      console.log(error)
-        return
-    }
+    
 
     } 
     
